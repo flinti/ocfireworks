@@ -9,7 +9,7 @@ I may have used some media and/or code made by others. They are mentioned either
 
 
 =============================================
-================== License ==================
+License
 =============================================
 
 See the LICENSE file.
