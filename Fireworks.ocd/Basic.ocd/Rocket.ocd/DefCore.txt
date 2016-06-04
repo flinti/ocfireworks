@@ -1,0 +1,15 @@
+[DefCore]
+id=FireworkRocket
+Version=8,0
+Category=C4D_Object
+Width=6
+Height=10
+Offset=-3,-5
+Vertices=3
+VertexX=2,2,0
+VertexY=0,3,-3
+VertexFriction=50,50,50
+Value=12
+Mass=8
+Rotate=1
+ 
