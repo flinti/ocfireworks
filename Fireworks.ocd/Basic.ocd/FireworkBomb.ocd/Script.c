@@ -7,11 +7,13 @@
 
 
 local fireworkData = {};
-local activated = false;
+local fireworkActivated = false;
 
+/* Public Interface */
 
 /** 
-	Call this function to ignite the bomb 
+ * Call this function to ignite the bomb 
+ * @param by The object the ignition is caused by. May be nil.
 */
 public func SetFused(object by)
 {
@@ -26,8 +28,9 @@ public func SetFused(object by)
 }
 
 /**
-	Set the fireworkData
-	You should only assign static const proplists as Prototypes!
+ * Set the fireworkData
+ * You should only assign static const proplists as Prototypes!
+ * @param data The firework data to set
 */
 public func SetFireworkData(proplist data)
 {
@@ -35,32 +38,205 @@ public func SetFireworkData(proplist data)
 }
 
 
+/* Implementation */
 
 protected func StartFirework()
 {
-	activated = true;
+	if(fireworkActivated)
+		return;
+	fireworkActivated = true;
 	
-	if(fireworkData.trail)
-		AddFireworkTrail(fireworkData.trail);
+	// duration
+	var duration = fireworkData.duration;
+	if(duration)
+	{
+		if(GetType(duration) == C4V_Int)
+			ScheduleCall(this, Global.RemoveObject, duration);
+		else
+			ScheduleCall(this, Global.RemoveObject, RandomX(duration[0], duration[1]));
+	}
 	
-	if(fireworkData.duration)
-		ScheduleCall(this, Global.RemoveObject, fireworkData.duration);
+	// trails
+	var trails = fireworkData.trails;
+	if(trails)
+	{
+		if(GetType(trails) != C4V_Array)
+			trails = [trails];
+			
+		for(var trail in trails)
+		{
+			if(trail.delay)
+				ScheduleCall(this, this.AddFireworkTrail, trail.delay, nil, trail);
+			else
+				AddFireworkTrail(trail);
+		}
+	}
 	
-	if(fireworkData.effects)
-		for(var fweffect in fireworkData.effects)
+	// effects
+	var effects = fireworkData.effects;
+	if(effects)
+	{
+		if(GetType(effects) != C4V_Array)
+			effects = [effects];
+			
+		for(var fweffect in effects)
 			if(fweffect.delay)
-				ScheduleCall(this, Global.CreateFireworkEffect, fweffect.delay, nil, fweffect);
+				ScheduleCall(this, this.CreateFireworkEffect, fweffect.delay, nil, fweffect);
 			else
 				CreateFireworkEffect(fweffect);
+	}
 }
+
+protected func CreateFireworkEffect(proplist fweffect)
+{
+	var type = fweffect.type;
+	
+	if(fweffect.sound)
+	{
+		var dummy = CreateObject(Dummy);
+		dummy->Sound(fweffect.sound);
+		dummy->RemoveObject();
+	}
+	
+	if(fweffect.execfn)
+		Call(fweffect.execfn, fweffect);
+	else
+		DebugLog("CreateFireworkEffect: undefined effect type %d", type);
+		
+	this->~OnFireworkEffect(fweffect);
+		
+	if(fweffect.die)
+		RemoveObject();
+}
+
+protected func AddFireworkTrail(proplist trail)
+{
+	var fx = CreateEffect(FireworkFx_FireworkTrail, 300, 1, trail);
+	
+	if(trail.initfn)
+		Call(trail.initfn, fx, trail);
+	fx.trailFunc = trail.execfn;
+	
+	if(!(trail.initfn || trail.execfn))
+		return DebugLog("AddFireworkTrail: undefined trail type %d", trail.type);
+}
+
+protected func RemoveFireworkTrails(proplist trail)
+{
+	var ret = 0;
+	while(RemoveEffect("FireworkTrail", this))
+		++ret;
+	return !!ret;
+}
+
+local FireworkFx_FireworkTrail = new Effect
+{
+	Name = "FireworkTrail",
+	
+	Construction = func(proplist trail)
+	{
+		this.trail = trail;
+	},
+	
+	//Play the trail's sound looped and set the lights
+	Start = func(int temp)
+	{
+		if(this.trail.soundLoop)
+			Target->Sound(this.trail.soundLoop, nil, nil, nil, 1);
+			
+		this.oldLightColor = Target->GetLightColor();
+		this.oldLightRange = Target->GetObjectVal("LightRange");
+		this.oldLightFadeoutRange = Target->GetObjectVal("LightFadeoutRange");
+		
+		Target->SetLightRange(this.trail.lightRange, this.trail.lightFadeoutRange);
+		Target->SetLightColor(this.trail.lightColor ?? this.trail.color);
+		
+		if(temp)
+			return;
+		
+		Target->~OnTrailStart(this.trail);
+	},
+
+	// Stop the trails sound loop and reset the lights as this firework has vanished
+	Stop = func(int temp)
+	{
+		if(this.trail.soundLoop)
+			Target->Sound(this.trail.soundLoop, nil, nil, nil, -1);
+		Target->SetLightRange(this.oldLightRange, this.oldLightFadeoutRange);
+		Target->SetLightColor(this.oldLightColor);
+		
+		if(temp)
+			return;
+			
+		Target->~OnTrailStop(this.Trail, Time);
+		
+		if(this.trail.dieAfter)
+			Target->RemoveObject();
+	},
+
+	// Do the Trail tick every frame
+	Timer = func(int time)
+	{		
+		Target->Call(this.trailFunc, this);
+		
+		if(this.trail.float)
+			Target->SetYDir(Target->GetYDir(10000) - (100 - this.trail.gravity) * GetGravity(), 10000);
+		
+		if(this.trail.accel)
+		{
+			var newSpeed = Target->GetSpeed(1000) + this.trail.accel /* * dt (= 1)*/;
+			if(newSpeed < 0)
+				;
+			else
+			{
+				var angle = Target->GetR();
+				Target->SetXDir(Sin(angle, newSpeed), 1000);
+				Target->SetYDir(-Cos(angle, newSpeed), 1000);
+			}
+		}
+		
+		if(this.trail.duration && time >= this.trail.duration)
+			return FX_Execute_Kill;
+		
+		return FX_OK;
+	},
+};
 
 protected func Initialize()
 {
-	SetFireworkData( { 
-		effects = [ new FW_Effect_Die {} ], 
-		trail = FW_Trail_None 
-	});
+
 }
+
+
+
+
+/** 
+ * Interactions with other objects
+ * You can use this with the cannon
+*/
+
+public func Fuse(bool shallExplodeOnHit)
+{
+	SetFused();
+}
+
+public func OnCannonShot(object cannon)
+{
+	SetFused(cannon);
+}
+
+public func IsFireworkBomb() { return true; }
+
+
+local Collectible = 1;
+local Name = "$Name$";
+local Description = "$Description$";
+local Components = { Coal = 1 };
+
+
+
+
+
 
 /* Saving */
 
@@ -80,10 +256,24 @@ protected func SerializeFireworkDataForScript(data, int depth)
 	if(GetType(data) == C4V_PropList)
 	{
 		// Save Prototype
+		var needToSaveProto = false;
 		if(GetPrototype(data))
-			serialized = Format("%snew %v ", serialized, data.Prototype);
+		{
+			var protostr = Format("%v", GetPrototype(data));
+			
+			if(GetChar(protostr, 0) == 123 /* { */) // protostr begins with { -> prototype not constant. We will need to save this later
+				needToSaveProto = true;
+			else // protostr is the name of the constant prototype, use 'new [Prototype] {'
+				serialized = Format("%snew %s ", serialized, protostr);
+		}
 			
 		serialized = Format("%s{\n", serialized);
+		
+		if(needToSaveProto) // If the prototype is not constant, it is saved in the Prototype property instead of using 'new [Prototype] {'
+		{
+			serialized = Indent(serialized, depth);
+			serialized = Format("%sPrototype = %s,\n", serialized, SerializeFireworkDataForScript(GetPrototype(data), depth+1));
+		}
 		
 		// We have to take care of that there are duplicates in the array returned from GetProperties if
 		// the proplist has a prototype
@@ -100,8 +290,9 @@ protected func SerializeFireworkDataForScript(data, int depth)
 		for(var key in GetProperties(properties)) 
 		{
 			var value = data[key];
-			if(GetPrototype(data))
+			if(GetPrototype(data)) 
 			{
+				//   Let's hope that resetting and then setting the Prototype again works fine
 				var savproto = GetPrototype(data);
 				
 				SetPrototype(nil, data);
@@ -163,37 +354,15 @@ protected func SerializeFireworkDataForScript(data, int depth)
 
 public func SaveScenarioObject(proplist props)
 {
-	if(activated)
+	if(fireworkActivated)
 		return false;
 	if(!inherited(props, ...))
 		return false;
 	
 	
 	var saveName = this->MakeScenarioSaveName();	
-	props->Add("FireworkData", "var %s_temp = %s;\n	%s->SetFireworkData(%s_temp)", saveName, SerializeFireworkDataForScript(fireworkData), saveName, saveName);
+	props->Add("FireworkData", "var %s_fireworkData = %s;\n	%s->SetFireworkData(%s_fireworkData)", saveName, SerializeFireworkDataForScript(fireworkData), saveName, saveName);
 	
 	return true;
 }
 
-
-/* Interactions with other objects */
-/* You can use this with the grenade lancher & the cannon */
-
-public func Fuse(bool shallExplodeOnHit)
-{
-	SetFused();
-}
-
-public func OnCannonShot(object cannon)
-{
-	SetFused(cannon);
-}
-
-public func IsFireworkBomb() { return true; }
-public func IsGrenadeLauncherAmmo() { return true; }
-
-
-local Collectible = 1;
-local Name = "$Name$";
-local Description = "$Description$";
-local Components = { Coal = 1, Firestone = 1 };

@@ -12,6 +12,9 @@ Definition2=Decoration.ocd
 
 [Player1]
 Crew=Clonk=1
+Buildings=ChemicalLab=1;Flagpole=1;WindGenerator=1;
+Knowledge=FireworkRocket
+Material=Firestone=1;Coal=1;Wood=1;
 
 [Player2]
 Crew=Clonk=1
@@ -30,5 +33,5 @@ MapHeight=60
 [Weather]
 Climate=0
 YearSpeed=0
-Wind=0,100,-100,100
+Wind=0,0,80,80
  

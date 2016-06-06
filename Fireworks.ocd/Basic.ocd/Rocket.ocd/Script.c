@@ -8,12 +8,7 @@
 #include FireworkBomb
 
 	
-	//local f = func() { local g = func() {Log("g");}; Log("f");};
 
-
-local a = { qwertz = 1 };
-local b = new a {  };
-local c = new b{ qwertz = 3 };
 
 protected func Initialize()
 {
@@ -21,59 +16,64 @@ protected func Initialize()
 	
 	var data = {
 		fuseTime = 0,
-		effects = [	new FW_Effect_Emit {
-							delay = 30,
+		effects = new FW_Effect_Emit {
+							delay = 36,
 							die = true,
-							amount = 10,
+							amount = 12,
 							emitted = [
 							{
-								speedSet = [10, 20],
+								angle = [0, 360, -20, 20],
+								speed = [15, 20],
 								fireworkData = {
-									duration = 20,
-									trail = new FW_Trail_Glow {
-										float = true,
+									duration = [16, 24],
+									trails = new FW_Trail_Glow {
 										lightRange = 10,
 										lightFadeoutRange = 100,
 										size = 3,
-										color = HSL(Random(256), 255, 128),			
+										float = true,
+										gravity = 30,
+										color = HSL(Random(256), 230, 128),			
 									}
 								}
 							}
-							/*{
-								speedSet = [30, 40],
-								fireworkData = {
-									duration = 10,
-									trail = new FW_Trail_Glow {
-										lightRange = 10,
-										lightFadeoutRange = 300,
-										size = 3,
-										color = RGB(128, 255, 128),			
-									}
-								}
-							}*/
 							],
-						}
-					],
-		trail = new FW_Trail_Glow {
+						},
+		trails = [ /*new FW_Trail_Glow {
+						duration = 22,
 						lightRange = 4,
 						lightFadeoutRange = 100,
 						size = 3,
 						soundLoop = "Fire::FuseLoop",
-						accel = 20,
-						color = RGB(128, 255, 128),
+						accel = 360,
+						color = HSL(Random(256), 255, 128),
+					},*/
+					new FW_Trail_Sparkle {
+						duration = 20,
+						lightRange = 4,
+						lightFadeoutRange = 100,
+						size = [2, 6],
+						soundLoop = "Fire::FuseLoop",
+						accel = 360,
+						color = HSL(Random(256), 255, 128),
+					},
+					new FW_Trail_None {
+						delay = 20,
 					}
+				]
+					
 	};
 	SetFireworkData(data);
 }
 
-protected func ControlUse(object clonk, int iX, int iY)
+public func ControlUse(object clonk, int x, int y)
 {
-	SetController(clonk->GetController());
-	Exit(0, 0, 0, 0, -6);
+	var angle = Angle(0, 0, x, y);
+	Exit();
+	SetR(angle);
+	SetSpeed(Sin(angle, 10), -Cos(angle, 10));
 	SetFused(clonk);
 	SetObjectLayer(this);
-	Sound("Firework::SoftShot?");
-	SetGraphics(nil, Dummy);
+	Sound("Firework::RocketStart?");
 	return true;
 }
 
@@ -82,6 +82,7 @@ protected func ControlUse(object clonk, int iX, int iY)
 local Collectible = 1;
 local Name = "$Name$";
 local Description = "$Description$";
-local Components = { Wood = 1, Firestone = 1 };
+local Components = { Coal = 1, Wood = 1 };
 
+public func IsChemicalProduct() { return true; }
 
