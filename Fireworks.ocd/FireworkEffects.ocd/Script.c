@@ -1,97 +1,54 @@
 /**
-	Firework Effects
-	
-	Contains effect prototypes
-	
-	Contains effect functions. These have to be called from object context.
-	These are internals, for public interfaces see /Basic.ocd/FireworkBomb.ocd and /System.ocg/Firework.c
-
-	@author Flinti
+ * Firework Effects
+ * 
+ * Contains effect prototypes
+ * 
+ * Contains effect functions. These have to be called from object context.
+ * These are internals, for public interfaces see /Basic.ocd/FireworkBomb.ocd and /System.ocg/Firework.c
+ * 
+ * @author Flinti
 */
 
 /* -- Effect prototypes -- */
 
 static const FW_Effect_Die = { 
+								Name = "Effect_Die",
 								execfn = FireworkEffects.None, 
-								type = FWE_Die, 
 								die = true,
 							};
+static const FW_Effect_SimpleFireworks = {
+								Name = "Effect_SimpleFireworks", 
+								execfn = FireworkEffects.SimpleFireworks, 
+								sound = "Firework::MediumBlast?",
+							};
 static const FW_Effect_Emit = { 
+								Name = "Effect_Emit", 
 								execfn = FireworkEffects.Emit, 
-								type = FWE_Emit, 
-								sound = "Firework::Blast?", 
+								sound = "Firework::MediumBlast?", 
 								emitted = [], 
 								amount = nil,
+								flash = true,
 							};
-static const FW_Effect_SimpleFireworks = { 
-								execfn = FireworkEffects.SimpleFireworks, 
-								type = FWE_SimpleFireworks, 
-								sound = "Firework::Blast?",
+static const FW_Effect_EmitStars = { 
+								Name = "Effect_EmitStars", 
+								execfn = FireworkEffects.EmitStars, 
+								sound = "Firework::MediumBlast?", 
+								emitted = [], 
+								amount = nil,
+								flash = true,
 							};
-
-static const FWE_Die = 0;
-static const FWE_Emit = 1;
-static const FWE_SimpleFireworks = 2;
-
-
-global func FW_Distribution_Linear(int min, int max, int deviationMin, int deviationMax)
-{
-	return [min, max, deviationMin, deviationMax];
-}
-
-global func FW_Distribution_Random(int min, int max)
-{
-	return [min, max];
-}
+static const FW_Effect_Glow = {
+								Name = "Effect_Glow", 
+								execfn = FireworkEffects.Glow,
+								flash = false,
+								color = -1,
+								lightRange = 20,
+								lightFadeoutRange = 200,
+								duration = 20,
+							};	
 
 
-/*static const FW_Distribution = new Global {
-		distribution = FW_Distribution_Random,
-	
-		SetDistribution = func(int dist) {
-			distribution = dist;
-			if(distribution == FW_Distribution_Random || !dist)
-				this.GetValue = this.GetValueRandom;
-			else if(distribution == FW_Distribution_Even)
-				this.GetValue = this.GetValueEven;
-		},
-	
-		GetValueRandom = func(int index, int max, array valueSet) {
-			return RandomX(valueSet[0], valueSet[1]);
-		},
-	
-		GetValueEven = func(int index, int max, array valueSet) {
-			return ((valueSet[0] + valueSet[2])*100 + (valueSet[1] - valueSet[0]) * index * 100 / max) / 100;
-		},
-	
-		GetValue = func(int index, int max, array valueSet) {}
-	};*/
 
-protected func GetValueFromDistribution(distribution, int index, int amount, int typeIndex, bool angleMode)
-{
-	var type = GetType(distribution);
-	
-	if(type == C4V_Int)
-		return distribution;
-	else if(type == C4V_Array)
-	{
-		// Two values: Return a random value between them
-		if(GetLength(distribution) == 2)
-			return RandomX(distribution[0], distribution[1]);
-		// Four values: Interpolate linearly between [0] and [1] ([0] + ([1]-[0]) * index/(amount-1)), add a random value between [2] and [3]
-		//              For angles, do not include the value [1] (divide by amount instead of amount-1)
-		else if(GetLength(distribution) == 4)
-			return (RandomX(distribution[2], distribution[3]) + distribution[0]) + (distribution[1] - distribution[0]) * index / (amount - !angleMode);
-	}
-	/*else if(type == C4V_PropList)
-	{
-	}*/
-	else
-	{
-		DebugLog("GetValueFromDistribution: distribution has wrong type (distribution = %v)", distribution);
-		return 0;
-	}
-}
 
 
 /* -- None -- */
@@ -112,21 +69,8 @@ public func SimpleFireworks(proplist fweffect)
 
 public func Emit(proplist fweffect)
 {
-	/*
-	amount
-	emitted []
-	angle
-	radius
-	rotation
-	rotationSpeed
-	rotationPrecision
-	speed
-	speedPrecision
-	*/
 	var length = GetLength(fweffect.emitted);
 	var amount = fweffect.amount ?? length;
-	//var distribution = new FW_Distribution {};
-	//distribution->SetDistribution(fweffect.distribution);
 	
 	for(var i = 0; i < amount; ++i)
 	{
@@ -136,31 +80,127 @@ public func Emit(proplist fweffect)
 		if(curEmitted.fireworkData)
 		{
 			var angle = curEmitted.angle ?? [0, 359];
-			angle = GetValueFromDistribution(angle, i, amount, emittedIndex, true) + GetR();
+			angle = FW_Distribution->GetValue(angle, i, amount, emittedIndex, true) + GetR();
 			
-			var radius = curEmitted.radius ?? [0, 0];
-			radius = GetValueFromDistribution(radius, i, amount, emittedIndex);
+			var radius = curEmitted.radius;
+			if(radius)
+				radius = FW_Distribution->GetValue(radius, i, amount, emittedIndex);
 			
 			var obj = CreateObject(FireworkBomb, Sin(angle, radius), -Cos(angle, radius));
-			obj->SetController(GetController());
 			
 			var rotation = curEmitted.rotation ?? [0, 359];
-			obj->SetR(GetValueFromDistribution(rotation, i, amount, emittedIndex, true));
+			obj->SetR(FW_Distribution->GetValue(rotation, i, amount, emittedIndex, true));
 			
-			var rotationSpeed = curEmitted.rotationSpeed ?? [0, 0];
-			obj->SetRDir(GetValueFromDistribution(rotationSpeed, i, amount, emittedIndex), curEmitted.rotationPrecision);
+			var rotationSpeed = curEmitted.rotationSpeed;
+			if(rotationSpeed)
+				obj->SetRDir(FW_Distribution->GetValue(rotationSpeed, i, amount, emittedIndex), curEmitted.rotationPrecision);
 			
-			var speed = curEmitted.speed ?? [0, 0];
-			speed = GetValueFromDistribution(speed, i, amount, emittedIndex);
-			obj->SetXDir(Sin(angle, speed) + GetXDir(curEmitted.speedPrecision) * curEmitted.relativeVelocity, curEmitted.speedPrecision);
-			obj->SetYDir(-Cos(angle, speed) + GetYDir(curEmitted.speedPrecision) * curEmitted.relativeVelocity, curEmitted.speedPrecision);
+			var speed = curEmitted.speed;
+			if(speed)
+			{
+				speed = FW_Distribution->GetValue(speed, i, amount, emittedIndex);
+				//var rnd3d = RandomX(-90, 90);
+				obj->SetXDir(Sin(angle, speed)/**Cos(rnd3d, 100) /100*/ + GetXDir(curEmitted.speedPrecision) * curEmitted.relativeVelocity, curEmitted.speedPrecision);
+				obj->SetYDir(-Cos(angle, speed)/**Cos(rnd3d, 100) /100*/ + GetYDir(curEmitted.speedPrecision) * curEmitted.relativeVelocity, curEmitted.speedPrecision);
 			
-			obj.fireworkData = curEmitted.fireworkData;
-			obj->SetFused(this);
+				obj.fireworkData = curEmitted.fireworkData;
+				obj->SetFused(this);
+			}
 		}
 	}
 }
 
+/* -- Emit Stars -- */
+
+local EmitStars_Types = {};
+
+
+public func EmitStars(proplist fweffect)
+{
+	var length = GetLength(fweffect.emitted);
+	var amount = fweffect.amount ?? length;
+	
+	for(var i = 0; i < amount; ++i)
+	{
+		var emittedIndex = i % length;
+		var curEmitted = fweffect.emitted[emittedIndex];
+		
+		if(curEmitted.type)
+		{
+			var angle = curEmitted.angle ?? [0, 359];
+			angle = FW_Distribution->GetValue(angle, i, amount, emittedIndex, true) + GetR();
+			
+			var radius = curEmitted.radius;
+			if(radius)
+				radius = FW_Distribution->GetValue(radius, i, amount, emittedIndex);
+			
+			var type = FireworkEffects.EmitStars_Types[curEmitted.type ?? "standard"];
+			var particle = type.particle;
+			
+			var speed = curEmitted.speed, speedx = 0, speedy = 0;
+			if(speed)
+			{
+				speed = FW_Distribution->GetValue(speed, i, amount, emittedIndex);
+
+				speedx = Sin(angle, speed) + GetXDir() * curEmitted.relativeVelocity;
+				speedy = -Cos(angle, speed) + GetYDir() * curEmitted.relativeVelocity;
+			}
+			
+			var lifetime = curEmitted.lifetime ?? 1;
+			lifetime = FW_Distribution->GetValue(lifetime);
+			
+			if(curEmitted.color)
+			{
+				particle.R = GetRGBaValue(curEmitted.color, 1);
+				particle.G = GetRGBaValue(curEmitted.color, 2);
+				particle.B = GetRGBaValue(curEmitted.color, 3);
+			}
+			particle.Size = curEmitted.size ?? particle.Size;
+			
+			CreateParticle(type.name, Sin(angle, radius), -Cos(angle, radius), speedx, speedy, lifetime, particle, type.amount);
+		}
+	}
+}
+
+/* -- Glow -- */
+
+public func Glow(proplist fweffect)
+{
+	var dummy = CreateObject(Dummy);
+	dummy->SetLightRange(fweffect.lightRange, fweffect.lightFadeoutRange);
+	dummy->SetLightColor(fweffect.color);
+	ScheduleCall(dummy, Global.RemoveObject, fweffect.duration ?? 1);
+}
+
+
+
+
+
+
+func Definition(id def)
+{
+	EmitStars_Types = {
+		standard = {
+			name = "StarSpark",
+			amount = 1,
+			particle = {
+				R = 255,
+				G = 255,
+				B = 255,
+				Alpha = 255,
+				Size = 3,
+				Rotation = PV_Direction(),
+				ForceX = PV_Wind(40),
+				ForceY = PV_Gravity(20),
+				DampingX = 950, 
+				DampingY = 950,
+				BlitMode = GFX_BLIT_Additive,
+				CollisionVertex = 500,
+				OnCollision = PC_Stop(),
+			},
+		},
+	};
+}
 
 
 

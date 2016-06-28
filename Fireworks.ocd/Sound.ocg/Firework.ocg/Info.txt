@@ -1,0 +1,19 @@
+The sounds named below are from feuerwerk.net (http://www.feuerwerk-forum.de/showpost.php?p=237619&postcount=3), 
+slightly altered:
+
+(comments in german)
+
+SmallBlast1: Ende abgeschnitten (30-50)
+SmallBlast2: Ende abgeschnitten (75)
+SmallBlast3: Explosion ausgeschnitten (Crosettbombe2)
+MediumBlast1: Ende abgeschnitten (100)
+MediumBlast2: Ende abgeschnitten (125)
+BigBlast1: Ende abgeschnitten (150-200)
+BigBlast2: Ende abgeschnitten (200)
+ShortBlast1: Explosion ausgeschnitten (Crosettbombe)
+Shot1: ende abgeschnitten (Einzelschuss)
+HeavyShot1: Ende abgeschnitten (Feuertopf 2)
+HeavyShot2: Am Ende abgeschnitten (Feuertop Crackling)
+StrangeShot1: Am Ende abgeschnitten (Feuertopf)
+MediumShot1: Original (Mörser 3)
+MediumShot2: Schuss ausgeschnitten (Mörser 4)

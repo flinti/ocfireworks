@@ -1,0 +1,3 @@
+[Particle]
+Name=LongSpark
+Face=0,0,64,64

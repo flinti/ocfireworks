@@ -16,6 +16,16 @@ protected func Initialize()
 	//AddEffect("IntCastFirework", obj, 1, 10);
 }
 
+func InitializeAmbience()
+{
+	Tree_Coniferous->Place(5);
+	Tree_Coniferous2->Place(5);
+	Tree_Coniferous3->Place(5);
+	Tree_Coniferous4->Place(5);
+	Trunk->Place(3);
+	Grass->Place(10);
+}
+
 global func FxIntCastFireworkTimer(object target, proplist fx)
 {
 	var obj = (target->CreateContents(FireworkRocket));
@@ -32,19 +42,17 @@ protected func InitializePlayer(int player, int x, int y, object base, int team,
 	var clonk = GetCrew(player);
 	clonk->CreateContents(FireworkRocket);
 	clonk->AddEffect("IntRefillFirework", clonk, 1, 1);
-	clonk->SetLightRange(10);
-	
-	/*var nx = LandscapeWidth()/2+20, ny = LandscapeHeight()/2;
-	while(GBackSolid(nx, ny))
-		ny-=10;
-	clonk->SetPosition(nx, ny);*/
-	var x = FindObject(Find_ID(Flagpole))->GetX();
-	var y = FindObject(Find_ID(Flagpole))->GetY();
-	clonk->SetPosition(x, y-10);
+	clonk->SetLightRange(1);
 }
 
 global func FxIntRefillFireworkTimer(object target)
 {
 	if(!target->FindContents(FireworkRocket))
 		target->CreateContents(FireworkRocket);
+	if(!target->FindContents(FireworkFountain))
+		target->CreateContents(FireworkFountain);
+	if(!target->FindContents(FireworkCake))
+		target->CreateContents(FireworkCake);
 }
+
+

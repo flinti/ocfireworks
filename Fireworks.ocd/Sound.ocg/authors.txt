@@ -1,5 +1,6 @@
-The sounds in the subdirectory Firework.ocg are altered (pitch, cutted) versions of sounds found here:
+Most of the sounds in the subdirectory Firework.ocg are altered (cutted) versions of sounds found here:
 
 http://www.feuerwerk-forum.de/showpost.php?p=237619&postcount=3
 
 The Terms of CC-BY-4.0 do not apply for those.
+See also: ./Firework.ocg/Info.txt
