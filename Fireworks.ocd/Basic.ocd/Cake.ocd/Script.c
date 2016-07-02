@@ -14,6 +14,13 @@ func Initialize()
 	var trailclr = RGB(230, 255, 230);
 	var buqclr = HSL(Random(256), RandomX(200, 255), 127);
 	
+	var colorarray = CreateArray(4);
+	var hue = Random(6)*60;
+	for(var i = 0; i < 4; ++i)
+	{
+		colorarray[i] = HSL(hue, RandomX(200, 255), 127);
+		hue += 60;
+	}
 	
 	var firstshotData  = new FireworkData {
 							fuseTime = 0,
@@ -36,7 +43,8 @@ func Initialize()
 													},
 													new FW_Trail_Star {
 														size = 8,
-														color = -1,
+														//color = -1,
+														color = FW_Distribution_Set(colorarray),
 														light = true,
 													},
 													new FW_Trail_Glow {
@@ -60,19 +68,6 @@ func Initialize()
 						};
 	
 	
-	fireworkData = new FireworkData {
-		fuseTime = 38,
-		shots = [
-			{
-				step = 30,
-				amount = 20,
-				emitted = [
-					nil
-				],
-			}
-		],
-	};
-	
 	var emittedBase = {
 						sound = "Firework::MediumShot?",
 						angle = FW_Distribution_Random(-5, 5),
@@ -82,7 +77,22 @@ func Initialize()
 					
 						fireworkData = firstshotData,
 					};
-	var hue = Random(6)*60;
+	
+	fireworkData = new FireworkData {
+		fuseTime = 38,
+		shots = [
+			{
+				step = 30,
+				amount = 20,
+				emitted = [
+					emittedBase
+				],
+			}
+		],
+	};
+	
+	
+	/*var hue = Random(6)*60;
 	for(var i = 0; i < 4; ++i)
 	{
 		buqclr = HSL(hue, RandomX(200, 255), 127);
@@ -101,7 +111,7 @@ func Initialize()
 		fireworkData.shots[0].emitted[i] = shot;
 		
 		hue += 60;
-	}
+	}*/
 }
 
 public func ControlUse(object clonk, int x, int y)

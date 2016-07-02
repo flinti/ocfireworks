@@ -103,7 +103,8 @@ public func Emit(proplist fweffect)
 				obj->SetXDir(Sin(angle, speed)/**Cos(rnd3d, 100) /100*/ + GetXDir(curEmitted.speedPrecision) * curEmitted.relativeVelocity, curEmitted.speedPrecision);
 				obj->SetYDir(-Cos(angle, speed)/**Cos(rnd3d, 100) /100*/ + GetYDir(curEmitted.speedPrecision) * curEmitted.relativeVelocity, curEmitted.speedPrecision);
 			
-				obj.fireworkData = curEmitted.fireworkData;
+				obj.fireworkData = new curEmitted.fireworkData {};
+				obj.fireworkData.distributionData = fweffect.distributionData;
 				obj->SetFused(this);
 			}
 		}

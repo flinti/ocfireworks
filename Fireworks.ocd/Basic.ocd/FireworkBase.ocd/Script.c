@@ -83,8 +83,10 @@ protected func DoStartFirework()
 }
 
 // trails (every 'timer' frames after 'delay' frames, lasting 'duration' frames)
-protected func ScheduleTrails(trails)
+protected func ScheduleTrails(trails, proplist parentFireworkData)
 {
+	if(!parentFireworkData)
+		parentFireworkData = this.fireworkData;
 	if(trails)
 	{
 		if(GetType(trails) != C4V_Array)
@@ -93,15 +95,15 @@ protected func ScheduleTrails(trails)
 		for(var trail in trails)
 		{
 			if(trail.delay)
-				ScheduleCall(this, this.CreateFireworkTrail, FW_Distribution->GetValue(trail.delay) ?? 1, nil, trail);
+				ScheduleCall(this, this.CreateFireworkTrail, FW_Distribution->GetValue(trail.delay) ?? 1, nil, trail, parentFireworkData);
 			else
-				CreateFireworkTrail(trail);
+				CreateFireworkTrail(trail, parentFireworkData);
 		}
 	}
 }
 
 // effects (one-time after 'delay' frames)
-protected func ScheduleEffects(effects)
+protected func ScheduleEffects(effects, proplist parentFireworkData)
 {
 	if(effects)
 	{
@@ -110,15 +112,16 @@ protected func ScheduleEffects(effects)
 			
 		for(var fweffect in effects)
 			if(fweffect.delay)
-				ScheduleCall(this, this.CreateFireworkEffect, FW_Distribution->GetValue(fweffect.delay) ?? 1, nil, fweffect);
+				ScheduleCall(this, this.CreateFireworkEffect, FW_Distribution->GetValue(fweffect.delay) ?? 1, nil, fweffect, parentFireworkData);
 			else
-				CreateFireworkEffect(fweffect);
+				CreateFireworkEffect(fweffect, parentFireworkData);
 	}
 }
 
 // shots (automatically stepped)
-protected func ScheduleShots(shots)
+protected func ScheduleShots(shots, proplist parentFireworkData)
 {
+	
 	var delay, wholedelay;
 	if(shots)
 	{
@@ -139,17 +142,24 @@ protected func ScheduleShots(shots)
 				wholedelay += delay;
 			}
 			if(wholedelay)
-				ScheduleCall(this, this.StartSalvo, wholedelay + shot.delay, nil, shot);
+				ScheduleCall(this, this.StartSalvo, wholedelay + shot.delay, nil, shot, parentFireworkData);
 			else
-				StartSalvo(shot);
+				StartSalvo(shot, parentFireworkData);
 		}
 	}
 }
 
 
 
-protected func CreateFireworkEffect(proplist fweffect)
+protected func CreateFireworkEffect(proplist fweffect_, proplist parentFireworkData)
 {
+	if(!parentFireworkData)
+		parentFireworkData = this.fireworkData;
+		
+	var fweffect = new fweffect_ {};
+	
+	fweffect.distributionData = parentFireworkData.distributionData;
+	
 	var type = fweffect.type;
 	
 	if(fweffect.sound)
@@ -180,16 +190,26 @@ protected func CreateFireworkEffect(proplist fweffect)
 		RemoveObject();
 }
 
-protected func CreateFireworkTrail(proplist trail)
+protected func CreateFireworkTrail(proplist trail_, proplist parentFireworkData)
 {
-	var fx = CreateEffect(FireworkFx_FireworkTrail, 300, trail.timer ?? 1, trail);
+	if(!parentFireworkData)
+		parentFireworkData = this.fireworkData;
+		
+	var trail = new trail_ {};
+	
+	trail.distributionData = parentFireworkData.distributionData;
+		
+	var fx = CreateEffect(FireworkFx_FireworkTrail, trail.effectPriority ?? 300, trail.timer ?? 1, trail);
 	
 	if(trail.initfn)
 		Call(trail.initfn, fx, trail);
 	fx.trailFunc = trail.execfn;
 	
 	if(!(trail.initfn || trail.execfn))
+	{
+		RemoveEffect(fx);
 		return DebugLog("AddFireworkTrail: undefined trail type %d", trail.type);
+	}
 }
 
 protected func RemoveFireworkTrails(proplist trail)
@@ -207,6 +227,12 @@ local FireworkFx_FireworkTrail = new Effect
 	Construction = func(proplist trail)
 	{
 		this.trail = trail;
+		if(trail.distributionData)
+		{
+			this.trail.color = FW_Distribution->GetValue(trail.color, trail.distributionData.shotIndex, trail.distributionData.shotAmount, trail.distributionData.shotTypeIndex);
+			this.trail.color2 = FW_Distribution->GetValue(trail.color2, trail.distributionData.shotIndex, trail.distributionData.shotAmount, trail.distributionData.shotTypeIndex);
+			this.trail.lightColor = FW_Distribution->GetValue(trail.lightColor, trail.distributionData.shotIndex, trail.distributionData.shotAmount, trail.distributionData.shotTypeIndex);
+		}
 	},
 	
 	//Play the trail's sound looped and set the lights
@@ -267,10 +293,15 @@ local FireworkFx_FireworkTrail = new Effect
 	},
 };
 
-protected func StartSalvo(proplist shot)
+protected func StartSalvo(proplist shot, proplist parentFireworkData)
 {
 	if(!shot.amount)
 		return;
+	if(!parentFireworkData)
+		parentFireworkData = fireworkData;
+		
+	//Do not pass any distribution data here, because that data is set by us
+		
 	CreateEffect(FxFireworkSalvo, 300, shot.step, shot);
 }
 
@@ -317,7 +348,13 @@ protected func DoShot(proplist fx)
 		dummy->RemoveObject();
 	}
 	
-	obj.fireworkData = shot.fireworkData;
+	obj.fireworkData = new shot.fireworkData {};
+	if(!obj.fireworkData.distributionData)
+		obj.fireworkData.distributionData = CreatePropList();
+		
+	obj.fireworkData.distributionData.shotIndex = fx.index;
+	obj.fireworkData.distributionData.shotAmount = fx.shot.amount;
+	obj.fireworkData.distributionData.shotTypeIndex = typeIndex;
 	obj->SetFused(this);
 	
 	++fx.index;

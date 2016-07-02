@@ -1,2 +1,4 @@
 
-static const FireworkData = { version = 1 };
+static const FireworkData = {
+	version = 1,
+};
