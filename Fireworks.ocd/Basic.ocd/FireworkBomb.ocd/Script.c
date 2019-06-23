@@ -11,15 +11,20 @@
 
 /* Implementation */
 
-protected func OnFinished()
+public func OnFused(object by)
+{
+	SetGraphics("None");
+}
+
+private func OnFinished()
 {
 	RemoveObject();
 }
 
-protected func Initialize()
+private func Initialize()
 {
-	SetGraphics("None");
 }
+
 
 /** 
  * Interactions with other objects

@@ -78,7 +78,7 @@ static const FW_Distribution = new Global {
 		}*/
 	},
 
-	GetValueRandom = func(array distribution, int index, int amount, int typeIndex, bool circularMode)
+	GetValueRandom = func(array distribution)
 	{
 		return RandomX(distribution[0], distribution[1]);
 	},
@@ -87,6 +87,24 @@ static const FW_Distribution = new Global {
 	GetValueLinear = func(array distribution, int index, int amount, int typeIndex, bool circularMode)
 	{
 		return (RandomX(-distribution[2], distribution[2]) + distribution[0]) + (distribution[1] - distribution[0]) * index / (amount - !circularMode);
-	}
+	},
+
+
+	GetParticleValueProvider = func(value, int scale, int mul)
+	{
+		scale = scale ?? 1;
+		mul = mul ?? 1;
+		if(GetType(value) == C4V_Array)
+		{
+			if(GetLength(value) == 2)
+				return PV_Random(value[0] * mul / scale, value[1] * mul / scale);
+			else if(GetLength(value) == 3)
+				return PV_Random(value[0] * mul / scale, value[1] * mul / scale, value[2]);
+			return value[0] * mul / scale;
+		}
+		else if(GetType(value) == C4V_Int)
+			return (value * mul / scale);
+		return value;
+	},
 };
 

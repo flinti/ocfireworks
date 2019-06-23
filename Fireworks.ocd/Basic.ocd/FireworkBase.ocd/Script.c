@@ -141,7 +141,7 @@ protected func ScheduleShots(shots, proplist parentFireworkData)
 				delay = prevshot.delay + (prevshot.step * prevshot.amount);
 				wholedelay += delay;
 			}
-			if(wholedelay)
+			if(wholedelay || shot.delay)
 				ScheduleCall(this, this.StartSalvo, wholedelay + shot.delay, nil, shot, parentFireworkData);
 			else
 				StartSalvo(shot, parentFireworkData);
@@ -165,7 +165,10 @@ protected func CreateFireworkEffect(proplist fweffect_, proplist parentFireworkD
 	if(fweffect.sound)
 	{
 		var dummy = CreateObject(Dummy);
-		dummy->Sound(fweffect.sound);
+		var pitch = fweffect.pitch;
+		if(pitch)
+			pitch = RandomX(pitch[0], pitch[1]);
+		dummy->Sound(fweffect.sound, nil, nil, nil, nil, nil, pitch);
 		dummy->RemoveObject();
 	}
 	
@@ -197,7 +200,8 @@ protected func CreateFireworkTrail(proplist trail_, proplist parentFireworkData)
 		
 	var trail = new trail_ {};
 	
-	trail.distributionData = parentFireworkData.distributionData;
+	if(!trail.distributionData)
+		trail.distributionData = parentFireworkData.distributionData;
 		
 	var fx = CreateEffect(FireworkFx_FireworkTrail, trail.effectPriority ?? 300, trail.timer ?? 1, trail);
 	
@@ -205,7 +209,7 @@ protected func CreateFireworkTrail(proplist trail_, proplist parentFireworkData)
 		Call(trail.initfn, fx, trail);
 	fx.trailFunc = trail.execfn;
 	
-	if(!(trail.initfn || trail.execfn))
+	if(!trail.execfn)
 	{
 		RemoveEffect(fx);
 		return DebugLog("AddFireworkTrail: undefined trail type %d", trail.type);
@@ -344,7 +348,10 @@ protected func DoShot(proplist fx)
 	if(shot.sound)
 	{
 		var dummy = CreateObject(Dummy);
-		dummy->Sound(shot.sound);
+		var pitch = shot.pitch;
+		if(pitch)
+			pitch = RandomX(pitch[0], pitch[1]);
+		dummy->Sound(shot.sound, nil, nil, nil, nil, nil, pitch);
 		dummy->RemoveObject();
 	}
 	

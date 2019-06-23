@@ -1,0 +1,6 @@
+Name=Mörser
+Description=Wird zum Abschießen von Feuerwerksbomben verwendet.
+Fire=Abfeuern
+FireDesc=Feuert die enthaltene Feuerwerksbombe gen Himmel.
+MkCollectible=Einsammelbar machen
+Actions=Aktionen

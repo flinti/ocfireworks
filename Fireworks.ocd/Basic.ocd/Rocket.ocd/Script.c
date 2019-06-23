@@ -7,26 +7,31 @@
 
 #include FireworkBomb
 
-	
+
 
 
 protected func Initialize()
-{
-	_inherited(...);
-	
+{	
 	//var trailclr = HSL(Random(256), 255, 160);
 	var trailclr = RGB(255, 140, 30);
 	var effclrA = HSL(Random(256), RandomX(200, 255), RandomX(140, 180));
 	var effclrB = InvertColor(effclrA);
 	
+	Set(trailclr, effclrA);
+}
+
+public func Set(int trailclr, int effectclr)
+{
 	var data = new FireworkData {
 		fuseTime = 0,
 		effects = [ 
+			new FW_Effect_Die {
+							delay = 37,
+			},
 			new FW_Effect_Emit {
 							delay = 36,
-							die = true,
 							amount = 12,
-							flash = effclrA,
+							flash = effectclr,
 							emitted = [
 								{
 									angle = FW_Distribution_Linear(0, 360, 20),
@@ -43,11 +48,24 @@ protected func Initialize()
 												lightFadeoutRange = 100,
 												size = 2,
 												//density = 2,
-												color = effclrA,
+												color = effectclr,
 												light = true,			
 											}
 										],
 									}
+								}
+							],
+			},
+			new FW_Effect_EmitStarsRandom {
+							delay = 36,
+							amount = 30,
+							emitted = [
+								{
+									type = "trailing",
+									color = -1,
+									speed = [20, 26],
+									size = 3,
+									lifetime = [50, 70],
 								}
 							],
 			}
@@ -67,6 +85,7 @@ protected func Initialize()
 	};
 	
 	SetFireworkData(data);
+
 }
 
 
@@ -80,7 +99,7 @@ public func ControlUse(object clonk, int x, int y)
 	SetFused(clonk);
 	SetObjectLayer(this);
 	Sound("Firework::RocketStart?");
-	CreateEffect(FxIntCorrectRotation, 1, 5);
+	CreateEffect(FxIntCorrectRotation, 1, 3);
 	return true;
 }
 
@@ -91,13 +110,16 @@ protected func OnFinished()
 
 local FxIntCorrectRotation = new Effect {
 	Timer = func()
-	{
+	{			
 		var angle = Angle(0, 0, Target->GetXDir(100), Target->GetYDir(100));
 
+		if(angle > 355 || angle < 5)
+			return;
+
 		if(angle < 180)
-			angle -= 5 + Random(3);
+			angle -= 2 + Random(3);
 		else
-			angle += 5 + Random(3);
+			angle += 2 + Random(3);
 			
 		Target->SetR(angle);
 	}

@@ -40,19 +40,25 @@ global func FxIntCastFireworkTimer(object target, proplist fx)
 protected func InitializePlayer(int player, int x, int y, object base, int team, id extra_data)
 {
 	var clonk = GetCrew(player);
-	clonk->CreateContents(FireworkRocket);
+//	clonk->CreateContents(FireworkRocket);
 	clonk->AddEffect("IntRefillFirework", clonk, 1, 1);
 	clonk->SetLightRange(1);
 }
 
 global func FxIntRefillFireworkTimer(object target)
 {
+	if(!target->FindContents(FireworkRomanCandle))
+		target->CreateContents(FireworkRomanCandle);
 	if(!target->FindContents(FireworkRocket))
 		target->CreateContents(FireworkRocket);
 	if(!target->FindContents(FireworkFountain))
 		target->CreateContents(FireworkFountain);
 	if(!target->FindContents(FireworkCake))
 		target->CreateContents(FireworkCake);
+	if(!target->FindContents(FireworkFishRocket))
+		target->CreateContents(FireworkFishRocket);
+	if(!target->FindContents(FireworkMortar))
+		target->CreateContents(FireworkMortar);
 }
 
 

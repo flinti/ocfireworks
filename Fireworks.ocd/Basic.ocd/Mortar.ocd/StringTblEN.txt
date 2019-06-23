@@ -1,0 +1,6 @@
+Name=Moratar
+Description=Use it to shoot firework bombs.
+Fire=Fire
+FireDesc=Shoot the firework bomb.
+MkCollectible=Make collectible
+Actions=Actions

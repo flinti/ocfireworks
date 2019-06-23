@@ -12,7 +12,7 @@ Definition2=Decoration.ocd
 
 [Player1]
 Crew=Clonk=1
-Knowledge=FireworkRocket
+Knowledge=FireworkRocket=1;FireworkCake=1;FireworkFountain=1;
 Material=Firestone=1;Coal=1;Wood=1;
 
 [Player2]
@@ -34,5 +34,5 @@ RightOpen=0
 [Weather]
 Climate=0
 YearSpeed=0
-Wind=0,0,80,80
+Wind=80,0,0,100
  

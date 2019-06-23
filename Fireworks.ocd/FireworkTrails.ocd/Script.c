@@ -52,24 +52,7 @@ static const FW_Trail_Star = {
 								color = -1, 
 								lightRange = 15, 
 								lightFadeoutRange = 150,
-							};			
-
-protected func MakeParticleValueProvider(value, int scale, int mul)
-{
-	scale = scale ?? 1;
-	mul = mul ?? 1;
-	if(GetType(value) == C4V_Array)
-	{
-		if(GetLength(value) == 2)
-			return PV_Random(value[0] * mul / scale, value[1] * mul / scale);
-		else if(GetLength(value) == 3)
-			return PV_Random(value[0] * mul / scale, value[1] * mul / scale, value[2]);
-		return value[0] * mul / scale;
-	}
-	else if(GetType(value) == C4V_Int)
-		return (value * mul / scale);
-	return value;
-}
+							};
 
 /* ----------------------------------------- Move ----------------------------------------- */
 
@@ -119,9 +102,9 @@ public func GlowInit(effect fx, proplist trail)
 	fx.trailParticleType = "FireworkStar";//"Magic";
 	fx.trailParticle = Particles_Colored(GlowParticle(), trail.color, trail.color2);
 	fx.trailParticle.Alpha = GetRGBaValue(trail.color, 0) ?? 255;
-	fx.trailParticle.Size = PV_Linear(MakeParticleValueProvider(trail.size), 0);
-	fx.amount = MakeParticleValueProvider(trail.density) ?? 3;
-	fx.lifetime = MakeParticleValueProvider(trail.lifetime ?? [40, 55]);
+	fx.trailParticle.Size = PV_Linear(FW_Distribution->GetParticleValueProvider(trail.size), 0);
+	fx.amount = FW_Distribution->GetParticleValueProvider(trail.density) ?? 3;
+	fx.lifetime = FW_Distribution->GetParticleValueProvider(trail.lifetime ?? [40, 55]);
 	
 	fx.posradius = PV_Random(0, 5, nil, 1);
 }
@@ -140,7 +123,7 @@ public func Glow(effect fx)
 
 /* --------------------------------------- Sparkle --------------------------------------- */
 
-func SparkleParticle() 
+/*func SparkleParticle() 
 {
 	return {
 		Rotation = PV_Direction(),
@@ -155,19 +138,20 @@ func SparkleParticle()
 	//	Alpha = PV_Linear(128, 0),
 		Size = PV_KeyFrames(0, 0, 0, 200, PV_Random(3, 10), 1000, PV_Random(8, 11)),
 	};
-}
+}*/
 
 public func SparkleInit(effect fx, proplist trail)
 {
-	fx.trailParticleType = "StarSpark";
-	fx.trailParticle = Particles_Colored(SparkleParticle(), trail.color, trail.color2);
+	var p = FireworkParticles->GetParticle("sparkle", trail);
+	fx.trailParticleType = p.name;
+	fx.trailParticle = Particles_Colored(p, trail.color, trail.color2);
 	fx.amount = trail.density ?? 4;
 	
-	var size = trail.size;
-	fx.trailParticle.Size = PV_KeyFrames(0, 0, MakeParticleValueProvider(size), 700, MakeParticleValueProvider(size, 2), 1000, 0);
+	//var size = trail.size;
+	//fx.trailParticle.Size = PV_KeyFrames(0, 0, FW_Distribution->GetParticleValueProvider(size), 700, FW_Distribution->GetParticleValueProvider(size, 2), 1000, 0);
 		
-	fx.lifetime = MakeParticleValueProvider(trail.lifetime ?? [50, 80]);
-	fx.speed = MakeParticleValueProvider(trail.speed ?? 4);
+	fx.lifetime = FW_Distribution->GetParticleValueProvider(trail.lifetime ?? [50, 80]);
+	fx.speed = FW_Distribution->GetParticleValueProvider(trail.speed ?? 4);
 }
 
 public func Sparkle(effect fx)
@@ -188,65 +172,28 @@ public func Sparkle(effect fx)
 /* --------------------------------------- Fish --------------------------------------- */
 
 
-// TODO
-
-
-func FishParticle() 
-{
-	return {
-		Rotation = PV_Direction(),
-		OnCollision = PC_Stop(),
-		CollisionVertex = 500,
-		BlitMode = GFX_BLIT_Additive,
-		Alpha = PV_Random(1, 254, 3),
-		ForceX = PV_Wind(40, PV_Random(-1,1)),
-		ForceY = PV_Gravity(20, PV_Random(-1,1)),
-		DampingX = 950, 
-		DampingY = 950,
-	//	Alpha = PV_Linear(128, 0),
-		Size = PV_KeyFrames(0, 0, 0, 200, PV_Random(3, 10), 1000, PV_Random(8, 11)),
-	};
-}
-
 public func FishInit(effect fx, proplist trail)
 {
-	fx.trailParticleType = "StarSpark";
-	fx.trailParticle = Particles_Colored(SparkleParticle(), trail.color, trail.color2);
+	var p = FireworkParticles->GetParticle("fish", trail);
+	fx.trailParticleType = p.name;
+	fx.trailParticle = Particles_Colored(p, trail.color, trail.color2);
 	fx.amount = trail.density ?? 4;
-	
-	var size = trail.size;
-	if(GetType(size) == C4V_Array)
-		fx.trailParticle.Size = PV_KeyFrames(0, 0, PV_Random(size[0], size[1]), 700, PV_Random(size[0] / 2, size[1] / 2), 1000, 0);
-	else
-		fx.trailParticle.Size = PV_KeyFrames(0, 0, size, 700, size / 2, 1000, 0);
 		
-	if(trail.lifetime)
-	{
-		if(GetType(trail.lifetime) == C4V_Array)
-			fx.lifetime = PV_Random(trail.lifetime[0], trail.lifetime[1]);
-		else
-			fx.lifetime = trail.lifetime;
-	}
-	else
-		fx.lifetime = PV_Random(50, 80);
-		
+	fx.lifetime = FW_Distribution->GetParticleValueProvider(trail.lifetime ?? [50, 80]);
 	fx.speed = trail.speed ?? 4;
 }
 
 public func Fish(effect fx)
 {
-	Message("TODO");
-
 	var rawangle = Angle(0, 0, GetXDir(100), GetYDir(100));
 	var angle = -90 - rawangle; //clonk angle + 180° -> math angle
-	var angle2 = -rawangle;
 	
 	CreateParticle(fx.trailParticleType, 
 				PV_Cos(angle, PV_Random(1, 5, nil, 1)), //x
 				PV_Sin(-angle, PV_Random(1, 5, nil, 1)), //y
 				
-				PV_Cos(angle2, PV_Random(-fx.speed, fx.speed, nil, 2)), //xdir
-				PV_Sin(-angle2, PV_Random(-fx.speed, fx.speed, nil, 2)), //ydir
+				0, //xdir
+				0, //ydir
 		fx.lifetime, fx.trailParticle, fx.amount);
 }
 
@@ -278,10 +225,10 @@ public func StarInit(effect fx, proplist trail)
 {
 	fx.trailParticleType = "FireworkStarLight";
 	fx.trailParticle = Particles_Colored(StarParticle(), trail.color, trail.color2);
-	fx.trailParticle.Size = MakeParticleValueProvider(trail.size ?? [5, 8]);
+	fx.trailParticle.Size = FW_Distribution->GetParticleValueProvider(trail.size ?? [5, 8]);
 	
 	fx.trailParticle2 = Particles_Colored(StarParticle2(), trail.color, trail.color2);
-	fx.trailParticle2.Size = MakeParticleValueProvider(trail.size ?? [5, 8], nil, 4);
+	fx.trailParticle2.Size = FW_Distribution->GetParticleValueProvider(trail.size ?? [5, 8], nil, 4);
 }
 
 public func Star(effect fx)

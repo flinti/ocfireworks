@@ -15,14 +15,14 @@ func Initialize()
 	var buqclr = HSL(Random(256), RandomX(200, 255), 127);
 	
 	var colorarray = CreateArray(4);
-	var hue = Random(6)*60;
+	var hue = 0;//Random(6)*60;
 	for(var i = 0; i < 4; ++i)
 	{
 		colorarray[i] = HSL(hue, RandomX(200, 255), 127);
 		hue += 60;
 	}
 	
-	var firstshotData  = new FireworkData {
+	var shotData  = new FireworkData {
 							fuseTime = 0,
 							effects = [
 								new FW_Effect_Emit {
@@ -35,7 +35,7 @@ func Initialize()
 											angle = FW_Distribution_Linear(0, 360, 2),
 											speed = [12, 15],
 											fireworkData = new FireworkData {
-												duration = [20, 25],
+												//duration = [20, 25],
 												trails = [
 													new FW_Trail_Move {
 														float = true,
@@ -49,6 +49,8 @@ func Initialize()
 													},
 													new FW_Trail_Glow {
 														size = 2,
+														timer = 3,
+														density = 5,
 														color = trailclr,
 													}
 												],
@@ -66,60 +68,44 @@ func Initialize()
 								}
 							],
 						};
+	var subeffects = [new shotData.effects[0] { delay = [20, 25] }];
+	subeffects[0].emitted = [ new shotData.effects[0].emitted[0] {} ];
+	subeffects[0].emitted[0].fireworkData = new shotData.effects[0].emitted[0].fireworkData { duration = [20, 25], effects = nil };
+	
+	shotData.effects[0].emitted[0].fireworkData.effects = subeffects;
 	
 	
-	var emittedBase = {
+	var emitted = {
 						sound = "Firework::MediumShot?",
+						pitch = [-5, 20],
 						angle = FW_Distribution_Random(-5, 5),
 						xoffset = FW_Distribution_LinearModulo(-4, 4, 5, 0),
 						speed = 58,
 						height = 4,
 					
-						fireworkData = firstshotData,
+						fireworkData = shotData,
 					};
 	
 	fireworkData = new FireworkData {
 		fuseTime = 38,
 		shots = [
 			{
-				step = 30,
+				step = 40,
 				amount = 20,
 				emitted = [
-					emittedBase
+					emitted
 				],
 			}
 		],
 	};
-	
-	
-	/*var hue = Random(6)*60;
-	for(var i = 0; i < 4; ++i)
-	{
-		buqclr = HSL(hue, RandomX(200, 255), 127);
-		
-		var shot = new emittedBase {};
-		shot.fireworkData = new emittedBase.fireworkData {};
-		shot.fireworkData.effects = new emittedBase.fireworkData.effects[0] {};
-		shot.fireworkData.effects.flash = buqclr;
-		shot.fireworkData.effects.emitted = [new emittedBase.fireworkData.effects[0].emitted[0] {}];
-		shot.fireworkData.effects.emitted[0].fireworkData = new emittedBase.fireworkData.effects[0].emitted[0].fireworkData {};
-		shot.fireworkData.effects.emitted[0].fireworkData.trails = CreateArray(GetLength(emittedBase.fireworkData.effects[0].emitted[0].fireworkData.trails));
-		for(var q = 0; q < GetLength(emittedBase.fireworkData.effects[0].emitted[0].fireworkData.trails); ++q)
-			shot.fireworkData.effects.emitted[0].fireworkData.trails[q] = new emittedBase.fireworkData.effects[0].emitted[0].fireworkData.trails[q] {};
-		shot.fireworkData.effects.emitted[0].fireworkData.trails[1].color = buqclr;
-		
-		fireworkData.shots[0].emitted[i] = shot;
-		
-		hue += 60;
-	}*/
 }
 
 public func ControlUse(object clonk, int x, int y)
-{	
-	if(x > 0)
-		Exit(10);
-	else
-		Exit(-10);
+{
+	if(Distance(x, y, 0, 0) > 40)
+		x = y = 0;
+	
+	Exit(x, y);
 		
 	SetFused(clonk);
 	SetObjectLayer(this);

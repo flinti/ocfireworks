@@ -24,6 +24,7 @@ func Initialize()
 						lifetime = [25, 35],
 						color = clra,
 						light = true,
+						soundLoop = "Fire::FuseLoop",
 					},
 					new FW_FountainEffect_Sparkle {
 						speed = [20, 35],
@@ -32,17 +33,40 @@ func Initialize()
 						lifetime = [25, 35],
 						color = clrb, 
 						light = true,
+					},
+					new FW_FountainEffect_LongSparks {
+						speed = [35, 45],
+						deviation = 15,
+						size = [2, 4],
+						lifetime = [25, 35],
+						color = -1,
+						timer = 1,
 					}
+					/*new FW_FountainEffect_Emit {
+						chance = 30,
+						speed = [35, 45],
+						deviation = 22,
+						fireworkData = new FireworkData {
+							duration = 20,
+							trails = [
+								new FW_Trail_Star {
+									size = 4,
+									color = RGB(255, 0, 0),
+									light = true,
+								}
+							],
+						},
+					}*/
 				],
 	};
 }
 
 public func ControlUse(object clonk, int x, int y)
 {	
-	if(x > 0)
-		Exit(10);
-	else
-		Exit(-10);
+	if(Distance(x, y, 0, 0) > 40)
+		x = y = 0;
+	
+	Exit(x, y);
 		
 	SetFused(clonk);
 	SetObjectLayer(this);
